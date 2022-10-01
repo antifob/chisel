@@ -38,7 +38,7 @@ jobs:
 
         run: |
           v=$(git rev-parse --short "${GITHUB_SHA}")
-          go build -ldflags "-X github.com/jpillora/chisel/share.BuildVersion=${v} -w -s" -o "chisel-${GOOS}-${GOARCH}"
+          CGO_ENABLED=1 go build -ldflags "-X github.com/jpillora/chisel/share.BuildVersion=${v} -w -s -extldflags=-static" -trimpath -tags osusergo,netgo,sqlite_omit_load_extension -o "chisel-${GOOS}-${GOARCH}"
       - name: Upload to artifact storage
         uses: actions/upload-artifact@v2
         with:
