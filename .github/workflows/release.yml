@@ -1,0 +1,66 @@
+---
+name: builds
+
+on:
+  push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # build targets
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: '386'
+          - goos: darwin
+            goarch: amd64
+          - goos: windows
+            goarch: amd64
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2.3.4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.15
+
+      - name: Prepare environment
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+
+        run: |
+          v=$(git rev-parse --short "${GITHUB_SHA}")
+          go build -ldflags "-X github.com/jpillora/chisel/share.BuildVersion=${v} -w -s" -o "chisel-${GOOS}-${GOARCH}"
+      - name: Upload to artifact storage
+        uses: actions/upload-artifact@v2
+        with:
+          path: chisel-${{ matrix.goos }}-${{ matrix.goarch }}
+          if-no-files-found: error
+          # only meant for sharing with the publish job
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          path: chisel-*
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          title: "${{ env.GITHUB_SHA }}"
+          prerelease: true
+          files: |
+            chisel-*
+        id: "automatic_releases"
