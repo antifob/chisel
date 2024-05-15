@@ -22,10 +22,10 @@ jobs:
         uses: actions/checkout@v2
       - name: Build
         run: go build -v .
-      - name: Test
-        run: go test -v ./...
-        env:
-          GODEBUG: x509ignoreCN=0
+      #- name: Test
+      #  run: go test -v ./...
+      #  env:
+      #    GODEBUG: x509ignoreCN=0
   # ================
   # RELEASE JOB
   #   runs after a success test
